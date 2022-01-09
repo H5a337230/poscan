@@ -62,7 +62,7 @@ func ScanTcpp(hostname string, port string, poxy string) ScanResult {
 	return result
 }
 
-// #QUES: scan in wireshark? yes, checked scan in wireshark and it works
+
 // about udp packets
 // as explained in detail, the connection is not closed at that point. 
 // A normal closing of a connection doesn't happen until both sids send FIN-ACK(finish the connection).
@@ -75,7 +75,7 @@ func ScanUDP(host string, port int) ScanResult {
 	hosti := host+":"+pori
 	serverAddr, err := net.ResolveUDPAddr("udp4", hosti)
 	conn,erro := net.DialUDP("udp",nil,serverAddr)
-	fmt.Println(conn)
+	//fmt.Println(conn)
 	if erro != nil {
 		result.State = "CLOSE"
 		return result
@@ -108,7 +108,6 @@ func ScanUDP(host string, port int) ScanResult {
 	return result
 }
 
-// #QUES: live host no icmp?
 // some firewalls like zone alarm, in windows firewall, close totally echo reply
 // echo 1 >/proc/sys/net/ipv4/icmp_echo_ignore_all
 // at all, we can set ignore icmp requests
@@ -151,11 +150,11 @@ func ScanICMP(hostname string) ScanResult {
 		//fmt.Println(msg[0 : 20+len])
 		//fmt.Println("Got response")
 		if msg[20+5] == 13 && msg[20+7] == 37 && msg[20+8] == 99 {
-			result.State = "OPEN"
+			result.State = "- Host is Live"
 			return result
 		}
 	}
-	result.State = "CLOSE"
+	result.State = "- Host is NOT Live"
 	return result
 }
 
@@ -222,31 +221,36 @@ func main() {
 	poxy := flag.String("proxy", "", "define proxy - type:ip:port - JUST SUPPORTS SOCKS5 PROXY")
 	flag.Parse()
 	//
-	if *portrange == "" && *sports == "" && *singlep != "" { // this means that we don't have range of ports, just specified ports
-		scoutput := InitialScan(*target, *scantype, *singlep, *poxy)
+	if *scantype == "icmp" {
+		scoutput := InitialScan(*target, *scantype, "", "")
 		fmt.Println(scoutput[0])
-	} else if *portrange != "" && *sports == "" && *singlep == "" {  // this means that we have port range and we should parse portrange value - split with '-'
-		pranges := strings.Split(*portrange, "-")
-		startport,_ := strconv.Atoi(pranges[0])  // int of start port
-		endport,_ := strconv.Atoi(pranges[1])   // int of enf port
-		for tport := startport; tport <= endport; tport++ {
-			scp := strconv.Itoa(tport)
-			scoutput := InitialScan(*target, *scantype, scp, *poxy)
-			fmt.Println(scoutput[0])
-		}
-	} else if *portrange == "" && *sports != "" && *singlep == "" {
-		sportsA := strings.Split(*sports, ",")
-		for _,scport := range sportsA {
-			scoutput := InitialScan(*target, *scantype, scport, *poxy)
-			fmt.Println(scoutput[0])
-		}
 	} else {
-		fmt.Println("\n  [!]CHECK YOUR PROVIDED COMMANDs[!]")
-		fmt.Println("  YOU HAVE TO PROVIDE 'target' AND 'scantype'")
-		fmt.Println("  FOR THE PORT DEFINITION, YOU HAVE TO PROVIDE ONE OF THREE OPTIONS YOU HAVE")
-		fmt.Println("  'sports' FOR SPECIFIC PORTS THAT YOU WANT TO SPECIFY")
-		fmt.Println("  'oneport' IF YOU WANT TO SCAN SINGLE PORT")
-		fmt.Println("  'prange' IF YOU WANT TO PROVIDE PORT RANGE TO SCAN\n")
-		flag.PrintDefaults()
+		if *portrange == "" && *sports == "" && *singlep != "" { // this means that we don't have range of ports, just specified ports
+			scoutput := InitialScan(*target, *scantype, *singlep, *poxy)
+			fmt.Println(scoutput[0])
+		} else if *portrange != "" && *sports == "" && *singlep == "" {  // this means that we have port range and we should parse portrange value - split with '-'
+			pranges := strings.Split(*portrange, "-")
+			startport,_ := strconv.Atoi(pranges[0])  // int of start port
+			endport,_ := strconv.Atoi(pranges[1])   // int of enf port
+			for tport := startport; tport <= endport; tport++ {
+				scp := strconv.Itoa(tport)
+				scoutput := InitialScan(*target, *scantype, scp, *poxy)
+				fmt.Println(scoutput[0])
+			}
+		} else if *portrange == "" && *sports != "" && *singlep == "" {
+			sportsA := strings.Split(*sports, ",")
+			for _,scport := range sportsA {
+				scoutput := InitialScan(*target, *scantype, scport, *poxy)
+				fmt.Println(scoutput[0])
+			}
+		} else {
+			fmt.Println("\n  [!]CHECK YOUR PROVIDED COMMANDs[!]")
+			fmt.Println("  YOU HAVE TO PROVIDE 'target' AND 'scantype'")
+			fmt.Println("  FOR THE PORT DEFINITION, YOU HAVE TO PROVIDE ONE OF THREE OPTIONS YOU HAVE")
+			fmt.Println("  'sports' FOR SPECIFIC PORTS THAT YOU WANT TO SPECIFY")
+			fmt.Println("  'oneport' IF YOU WANT TO SCAN SINGLE PORT")
+			fmt.Println("  'prange' IF YOU WANT TO PROVIDE PORT RANGE TO SCAN\n")
+			flag.PrintDefaults()
+		}
 	}
 }
