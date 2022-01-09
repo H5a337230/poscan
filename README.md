@@ -30,8 +30,13 @@ sudo go run poscan.go -target 8.8.8.8 -scantype icmp
 
 
 
-### TODO:
+#### TODO:
 - [ ] Add UDP proxy support
 - [ ] Include more type of scans like syn, fin, stealth, xmas, rpc, ack
 - [ ] Multithread
 - [x] _
+
+
+---------------------------------
+
+any ideas and issues are welcomed ;-)
